@@ -50,36 +50,90 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Chat Specific Styles */
-        .chat-msg {
-            max-width: 80%;
-            padding: 0.75rem 1rem;
+        /* --- CHAT WIDGET STYLES --- */
+        
+        /* Floating Button */
+        .chat-bubble-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            background-color: #2563eb;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+        .chat-bubble-btn:hover {
+            transform: scale(1.1);
+            background-color: #1d4ed8;
+        }
+        
+        /* Chat Popup Box */
+        .chat-widget-box {
+            position: fixed;
+            bottom: 6.5rem;
+            right: 2rem;
+            width: 380px; /* Fixed width for widget feel */
+            height: 500px; /* Fixed height */
+            max-height: 80vh;
+            max-width: calc(100vw - 2rem); /* Responsive for mobile */
+            background-color: white;
             border-radius: 1rem;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin-bottom: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 49;
+            border: 1px solid #e5e7eb;
+            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .chat-widget-box.open {
+            display: flex;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Chat Messages */
+        .chat-msg {
+            max-width: 85%;
+            padding: 0.6rem 0.8rem;
+            border-radius: 0.8rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
             word-wrap: break-word;
         }
         .chat-msg-user {
             background-color: #2563eb;
             color: white;
             align-self: flex-end;
-            border-bottom-right-radius: 0.25rem;
+            border-bottom-right-radius: 0.2rem;
         }
         .chat-msg-ai {
             background-color: #f3f4f6;
             color: #1f2937;
             align-self: flex-start;
             border: 1px solid #e5e7eb;
-            border-bottom-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.2rem;
         }
         .typing-dot {
             display: inline-block;
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             background-color: #9ca3af;
             border-radius: 50%;
-            margin: 0 2px;
+            margin: 0 1px;
             animation: typing 1.4s infinite ease-in-out both;
         }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
@@ -91,14 +145,14 @@
 
         /* Custom Scrollbar */
         .custom-scroll::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
         }
         .custom-scroll::-webkit-scrollbar-track {
             background: transparent;
         }
         .custom-scroll::-webkit-scrollbar-thumb {
             background-color: #d1d5db;
-            border-radius: 20px;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -128,19 +182,15 @@
                 <button onclick="switchTab('how')" id="tab-how" class="nav-item">Cách hoạt động</button>
                 <button onclick="switchTab('apps')" id="tab-apps" class="nav-item">Ứng dụng</button>
                 <button onclick="switchTab('challenges')" id="tab-challenges" class="nav-item">Thách thức</button>
-                <button onclick="switchTab('chat')" id="tab-chat" class="nav-item flex items-center text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 font-semibold border border-blue-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                    Live Chat Demo
-                </button>
+                <!-- Removed Chat Tab from Main Nav -->
             </div>
         </div>
     </nav>
 
     <!-- Main Content Area -->
-    <main class="flex-grow overflow-y-auto bg-gray-50 custom-scroll">
-        <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 h-full">
+    <main class="flex-grow overflow-y-auto bg-gray-50 custom-scroll relative">
+        <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24"> 
+            <!-- Added pb-24 to prevent content from being hidden behind chat bubble -->
 
             <!-- 1. Overview Section -->
             <div id="content-overview" class="section-content active">
@@ -300,50 +350,59 @@
                  </div>
             </div>
 
-            <!-- 6. Live Chat Demo (Integrated) -->
-            <div id="content-chat" class="section-content h-full flex flex-col" style="height: calc(100vh - 200px);">
-                <div class="flex-grow bg-white rounded-2xl shadow-lg border border-gray-200 flex flex-col overflow-hidden">
-                    <!-- Chat Header -->
-                    <div class="bg-gray-900 text-white px-6 py-4 flex justify-between items-center">
-                        <div>
-                            <h3 class="font-bold text-lg">Hỗ trợ trực tuyến</h3>
-                            <p class="text-xs text-gray-400 flex items-center mt-1">
-                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                Trực tuyến
-                            </p>
-                        </div>
-                        <div id="chat-status" class="text-xs bg-gray-800 px-3 py-1 rounded-full text-gray-300">
-                            Đang kết nối...
-                        </div>
-                    </div>
-
-                    <!-- Chat Messages Area -->
-                    <div id="chat-window" class="flex-grow p-6 overflow-y-auto custom-scroll bg-white">
-                        <!-- Welcome Message -->
-                        <div class="chat-msg chat-msg-ai">
-                            👋 Xin chào! Tôi là trợ lý ảo AI. Tôi có thể giúp gì cho bạn hôm nay?
-                            <br><span class="text-xs text-gray-400 mt-1 block">Vừa xong</span>
-                        </div>
-                    </div>
-
-                    <!-- Input Area -->
-                    <div class="p-4 bg-gray-50 border-t border-gray-200">
-                        <form id="chat-form" class="flex gap-2">
-                            <input type="text" id="chat-input" class="flex-grow px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Nhập câu hỏi của bạn..." autocomplete="off" disabled>
-                            <button type="submit" id="chat-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled>
-                                <span>Gửi</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.5l1-5.5a1 1 0 011-1h2.5a1 1 0 00.992-.816l.5-4a1 1 0 00-.54-1.041z" />
-                                </svg>
-                            </button>
-                        </form>
-                        <div id="error-message" class="text-red-500 text-xs mt-2 text-center hidden"></div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </main>
+
+    <!-- === CHAT WIDGET COMPONENTS === -->
+    
+    <!-- Chat Box (Hidden by default) -->
+    <div id="chat-widget" class="chat-widget-box">
+        <!-- Header -->
+        <div class="bg-gray-900 text-white px-4 py-3 flex justify-between items-center flex-none cursor-pointer" onclick="toggleChat()">
+            <div class="flex items-center">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                <h3 class="font-bold text-sm">Hỗ trợ trực tuyến</h3>
+            </div>
+            <button class="text-gray-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="chat-status" class="bg-gray-100 text-xs text-center py-1 text-gray-500 border-b border-gray-200">
+            Đang chờ kết nối...
+        </div>
+
+        <!-- Messages Area -->
+        <div id="chat-window" class="flex-grow p-4 overflow-y-auto custom-scroll bg-white flex flex-col">
+            <!-- Welcome Message -->
+            <div class="chat-msg chat-msg-ai">
+                👋 Xin chào! Tôi là trợ lý ảo AI.<br>Tôi có thể giúp gì cho bạn hôm nay?
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-3 bg-gray-50 border-t border-gray-200 flex-none">
+            <form id="chat-form" class="flex gap-2">
+                <input type="text" id="chat-input" class="flex-grow px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm" placeholder="Nhập tin nhắn..." autocomplete="off" disabled>
+                <button type="submit" id="chat-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.5l1-5.5a1 1 0 011-1h2.5a1 1 0 00.992-.816l.5-4a1 1 0 00-.54-1.041z" />
+                    </svg>
+                </button>
+            </form>
+            <div id="error-message" class="text-red-500 text-xs mt-1 text-center hidden"></div>
+        </div>
+    </div>
+
+    <!-- Floating Bubble Button -->
+    <button onclick="toggleChat()" class="chat-bubble-btn" title="Chat với chúng tôi">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+    </button>
 
     <!-- Scripts -->
     <script>
@@ -354,11 +413,6 @@
             // Deactivate all tabs
             document.querySelectorAll('.nav-item').forEach(el => {
                 el.classList.remove('active');
-                el.classList.remove('bg-blue-600', 'text-white'); 
-                // Restore original classes for chat tab if needed, but simpler to reset basic style
-                if(el.id !== 'tab-chat') {
-                    // Basic reset handled by CSS removal
-                }
             });
 
             // Show target section
@@ -372,10 +426,16 @@
             if (tabId === 'benefits' && !window.chartInitialized) {
                 initChart();
             }
+        }
 
-            // Special init for Chat if not loaded
-            if (tabId === 'chat' && !window.chatInitialized) {
-                initChatModule();
+        // --- Chat Toggle Logic ---
+        function toggleChat() {
+            const chatBox = document.getElementById('chat-widget');
+            chatBox.classList.toggle('open');
+            
+            // Initialize Chat Logic on first open
+            if (chatBox.classList.contains('open') && !window.chatInitialized) {
+                window.initChatModule();
             }
         }
 
@@ -450,6 +510,7 @@
   		appId: "1:30673828530:web:7e4df9420ab25efcd167ab",
   		measurementId: "G-3T9PB6P6SC"
 		};
+
             
             // Tên App ID, bạn có thể tự đặt hoặc dùng mặc định
             let appId = 'my-chat-app'; 
@@ -459,8 +520,8 @@
             if (firebaseConfig.apiKey === "THAY_BANG_API_KEY_CUA_BAN" || !firebaseConfig.apiKey) {
                 console.error("Firebase config missing");
                 statusEl.textContent = "Thiếu Cấu hình";
-                statusEl.classList.replace('bg-gray-800', 'bg-red-600');
-                errorEl.innerHTML = "LỖI: Bạn chưa nhập cấu hình Firebase!<br>Vui lòng mở file HTML bằng Notepad và tìm dòng 'const firebaseConfig' để điền thông tin dự án Firebase của bạn.";
+                statusEl.classList.add('text-red-500');
+                errorEl.innerHTML = "LỖI: Bạn chưa nhập cấu hình Firebase!<br>Hãy mở file HTML bằng Notepad để sửa.";
                 errorEl.classList.remove('hidden');
                 return;
             }
@@ -472,12 +533,12 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 statusEl.textContent = "Đang xác thực...";
-                statusEl.classList.replace('bg-gray-800', 'bg-yellow-600');
+                statusEl.className = "bg-yellow-100 text-xs text-center py-1 text-yellow-700 border-b border-yellow-200";
             } catch (e) {
                 console.error("Firebase init error:", e);
                 statusEl.textContent = "Lỗi Khởi tạo";
-                statusEl.classList.replace('bg-yellow-600', 'bg-red-600');
-                errorEl.textContent = "Lỗi khởi tạo Firebase: " + e.message;
+                statusEl.className = "bg-red-100 text-xs text-center py-1 text-red-700 border-b border-red-200";
+                errorEl.textContent = "Lỗi khởi tạo: " + e.message;
                 errorEl.classList.remove('hidden');
                 return;
             }
@@ -489,8 +550,8 @@
             } catch (e) {
                 console.error("Auth error:", e);
                 statusEl.textContent = "Lỗi Đăng nhập";
-                statusEl.classList.replace('bg-yellow-600', 'bg-red-600');
-                errorEl.innerHTML = "Lỗi xác thực (Hãy chắc chắn bạn đã bật <b>Anonymous Auth</b> trong Firebase Console): " + e.message;
+                statusEl.className = "bg-red-100 text-xs text-center py-1 text-red-700 border-b border-red-200";
+                errorEl.innerHTML = "Lỗi xác thực: " + e.message;
                 errorEl.classList.remove('hidden');
                 return;
             }
@@ -498,8 +559,8 @@
             // 5. AUTH STATE LISTENER & CHAT LOGIC
             onAuthStateChanged(auth, (user) => {
                 if (user) {
-                    statusEl.textContent = "Đã kết nối (ID: " + user.uid.substring(0,6) + ")";
-                    statusEl.classList.replace('bg-yellow-600', 'bg-green-600');
+                    statusEl.textContent = "Đã kết nối (ID: " + user.uid.substring(0,4) + ")";
+                    statusEl.className = "bg-green-100 text-xs text-center py-1 text-green-700 border-b border-green-200";
                     inputEl.disabled = false;
                     btnEl.disabled = false;
                     inputEl.placeholder = "Nhập tin nhắn...";
@@ -507,7 +568,7 @@
                     setupChatListeners(db, user.uid, appId);
                 } else {
                     statusEl.textContent = "Mất kết nối";
-                    statusEl.classList.replace('bg-green-600', 'bg-red-600');
+                    statusEl.className = "bg-red-100 text-xs text-center py-1 text-red-700 border-b border-red-200";
                     inputEl.disabled = true;
                     btnEl.disabled = true;
                 }
@@ -516,8 +577,6 @@
 
         function setupChatListeners(db, userId, appId) {
             const chatWindow = document.getElementById('chat-window');
-            // Simplified path for custom projects: 'chats' -> 'global_room' -> 'messages'
-            // You can change this path if you want private chats
             const collectionPath = ['chats', 'global_room', 'messages'];
             
             let messagesRef = collection(db, ...collectionPath);
@@ -527,8 +586,7 @@
             onSnapshot(q, (snapshot) => {
                 chatWindow.innerHTML = `
                     <div class="chat-msg chat-msg-ai">
-                        👋 Xin chào! Tôi là trợ lý ảo AI. Tôi có thể giúp gì cho bạn hôm nay?
-                        <br><span class="text-xs text-gray-400 mt-1 block">Hệ thống</span>
+                        👋 Xin chào! Tôi là trợ lý ảo AI.<br>Tôi có thể giúp gì cho bạn hôm nay?
                     </div>
                 `;
 
@@ -539,10 +597,9 @@
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             }, (error) => {
                 console.error("Snapshot error:", error);
-                // Nếu lỗi permission, nhắc user bật Firestore Rules
                 if (error.code === 'permission-denied') {
                      const errorEl = document.getElementById('error-message');
-                     errorEl.innerHTML = "Lỗi quyền truy cập! Hãy vào Firebase Console -> Firestore Database -> Rules và đổi 'allow read, write: if false;' thành 'allow read, write: if true;' (cho mục đích test).";
+                     errorEl.innerHTML = "Lỗi quyền truy cập! Vui lòng kiểm tra Firestore Rules.";
                      errorEl.classList.remove('hidden');
                 }
             });
