@@ -437,37 +437,30 @@
             const btnEl = document.getElementById('chat-send-btn');
             const chatWindow = document.getElementById('chat-window');
 
-            // 1. ROBUST CONFIG LOADING
-            let firebaseConfig = null;
-            let appId = 'default-app';
-            let initialToken = null;
-
-            try {
-                // Check if global variable exists
-                if (typeof __firebase_config !== 'undefined') {
-                    firebaseConfig = JSON.parse(__firebase_config);
-                }
-                if (typeof __app_id !== 'undefined') {
-                    appId = __app_id;
-                }
-                if (typeof __initial_auth_token !== 'undefined') {
-                    initialToken = __initial_auth_token;
-                }
-            } catch (e) {
-                console.error("Config parsing error:", e);
-                errorEl.textContent = "Lỗi phân tích cấu hình hệ thống.";
-                errorEl.classList.remove('hidden');
-                statusEl.textContent = "Lỗi Cấu hình";
-                statusEl.classList.replace('bg-gray-800', 'bg-red-600');
-                return;
-            }
+            // 1. CẤU HÌNH FIREBASE CỦA BẠN (QUAN TRỌNG: BẠN PHẢI THAY ĐỔI PHẦN NÀY)
+            // HƯỚNG DẪN:
+            // 1. Vào console.firebase.google.com -> Project Settings -> Kéo xuống dưới -> Web App -> Copy config
+            // 2. Dán đè lên phần bên dưới
+            const firebaseConfig = {
+  		apiKey: "AIzaSyBMUvMykvoYX43Xl2LtZKKwN9IsBLN41Qs",
+  		authDomain: "aict-3d755.firebaseapp.com",
+  		projectId: "aict-3d755",
+  		storageBucket: "aict-3d755.firebasestorage.app",
+  		messagingSenderId: "30673828530",
+  		appId: "1:30673828530:web:7e4df9420ab25efcd167ab",
+  		measurementId: "G-3T9PB6P6SC"
+		};
+            
+            // Tên App ID, bạn có thể tự đặt hoặc dùng mặc định
+            let appId = 'my-chat-app'; 
 
             // 2. VALIDATION
-            if (!firebaseConfig || !firebaseConfig.apiKey) {
+            // Kiểm tra xem người dùng đã thay đổi config chưa
+            if (firebaseConfig.apiKey === "THAY_BANG_API_KEY_CUA_BAN" || !firebaseConfig.apiKey) {
                 console.error("Firebase config missing");
                 statusEl.textContent = "Thiếu Cấu hình";
                 statusEl.classList.replace('bg-gray-800', 'bg-red-600');
-                errorEl.innerHTML = "Không tìm thấy cấu hình Firebase.<br>Vui lòng đảm bảo môi trường chạy (Canvas) đã cung cấp biến __firebase_config.";
+                errorEl.innerHTML = "LỖI: Bạn chưa nhập cấu hình Firebase!<br>Vui lòng mở file HTML bằng Notepad và tìm dòng 'const firebaseConfig' để điền thông tin dự án Firebase của bạn.";
                 errorEl.classList.remove('hidden');
                 return;
             }
@@ -484,21 +477,20 @@
                 console.error("Firebase init error:", e);
                 statusEl.textContent = "Lỗi Khởi tạo";
                 statusEl.classList.replace('bg-yellow-600', 'bg-red-600');
+                errorEl.textContent = "Lỗi khởi tạo Firebase: " + e.message;
+                errorEl.classList.remove('hidden');
                 return;
             }
 
-            // 4. AUTHENTICATION
+            // 4. AUTHENTICATION (Anonymous only for GitHub/Local hosting)
             try {
-                if (initialToken) {
-                    await signInWithCustomToken(auth, initialToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Trên GitHub Pages/Localhost, chúng ta không có server token, nên dùng Anonymous
+                await signInAnonymously(auth);
             } catch (e) {
                 console.error("Auth error:", e);
                 statusEl.textContent = "Lỗi Đăng nhập";
                 statusEl.classList.replace('bg-yellow-600', 'bg-red-600');
-                errorEl.textContent = "Không thể xác thực người dùng ẩn danh.";
+                errorEl.innerHTML = "Lỗi xác thực (Hãy chắc chắn bạn đã bật <b>Anonymous Auth</b> trong Firebase Console): " + e.message;
                 errorEl.classList.remove('hidden');
                 return;
             }
@@ -524,16 +516,15 @@
 
         function setupChatListeners(db, userId, appId) {
             const chatWindow = document.getElementById('chat-window');
-            const collectionPath = ['artifacts', appId, 'public', 'data', 'support_chats', 'global_room', 'messages'];
+            // Simplified path for custom projects: 'chats' -> 'global_room' -> 'messages'
+            // You can change this path if you want private chats
+            const collectionPath = ['chats', 'global_room', 'messages'];
             
-            // Helper to construct collection ref from array path
             let messagesRef = collection(db, ...collectionPath);
 
             const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
             onSnapshot(q, (snapshot) => {
-                // Keep the first welcome message if we want, or clear all. Let's clear all except welcome for simplicity, or re-render.
-                // Strategy: Clear and re-render all to ensure order.
                 chatWindow.innerHTML = `
                     <div class="chat-msg chat-msg-ai">
                         👋 Xin chào! Tôi là trợ lý ảo AI. Tôi có thể giúp gì cho bạn hôm nay?
@@ -548,6 +539,12 @@
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             }, (error) => {
                 console.error("Snapshot error:", error);
+                // Nếu lỗi permission, nhắc user bật Firestore Rules
+                if (error.code === 'permission-denied') {
+                     const errorEl = document.getElementById('error-message');
+                     errorEl.innerHTML = "Lỗi quyền truy cập! Hãy vào Firebase Console -> Firestore Database -> Rules và đổi 'allow read, write: if false;' thành 'allow read, write: if true;' (cho mục đích test).";
+                     errorEl.classList.remove('hidden');
+                }
             });
 
             // SEND LOGIC
