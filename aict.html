@@ -673,13 +673,25 @@
             if (el) el.remove();
         }
 
-        function generateMockResponse(input) {
-            input = input.toLowerCase();
-            if (input.includes('chào') || input.includes('hi')) return "Chào bạn! Tôi có thể giúp gì cho bạn về đơn hàng hoặc dịch vụ?";
-            if (input.includes('giá') || input.includes('phí')) return "Sản phẩm của chúng tôi có nhiều mức giá khác nhau. Bạn quan tâm đến gói Cơ bản hay Nâng cao?";
-            if (input.includes('lỗi') || input.includes('không được')) return "Tôi rất tiếc về sự cố này. Bạn vui lòng cung cấp mã lỗi hoặc mô tả chi tiết hơn để tôi kiểm tra nhé.";
-            if (input.includes('cảm ơn')) return "Không có gì! Chúc bạn một ngày tốt lành.";
-            return "Tôi đã ghi nhận câu hỏi của bạn. Nhân viên hỗ trợ sẽ phản hồi chi tiết hơn trong giây lát.";
+        // Hàm mới: Gọi sang Server Node.js để lấy trí tuệ Gemini
+	async function getGeminiResponse(userInput) {
+    		try {
+        // Gọi đến server bạn đang chạy ở localhost:3000
+        const response = await fetch('http://localhost:3000/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: userInput })
+        });
+
+        const data = await response.json();
+        return data.reply; // Trả về câu trả lời của AI
+    } catch (error) {
+        console.error("Lỗi:", error);
+        return "Xin lỗi, server AI đang bị lỗi kết nối.";
+    }
+}
         }
     </script>
 </body>
