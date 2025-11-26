@@ -3,189 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot AI 24/7 & Hỗ trợ</title>
+    <title>Tương Lai CSKH 24/7 với AI Chatbot</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
         
-        /* Navigation Tabs */
-        .nav-item { cursor: pointer; padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 500; color: #4b5563; transition: all 0.2s; white-space: nowrap; }
-        .nav-item:hover { background-color: #e5e7eb; color: #1f2937; }
-        .nav-item.active { background-color: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        /* Gradient Text */
+        .text-gradient {
+            background: linear-gradient(to right, #2563eb, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-        /* Content Sections */
-        .section-content { display: none; animation: slideUp 0.4s ease-out; }
-        .section-content.active { display: block; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* === NÚT CHAT MESSENGER CŨ === */
+        .messenger-bubble {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            /* Gradient xanh đặc trưng của Messenger cũ */
+            background: linear-gradient(135deg, #0084ff, #00c6ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0, 132, 255, 0.3);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .messenger-bubble:hover { transform: scale(1.1); }
+        .messenger-icon { color: white; font-size: 32px; }
 
-        /* Floating Button */
-        .chat-bubble-btn { position: fixed; bottom: 2rem; right: 2rem; width: 3.5rem; height: 3.5rem; background-color: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); cursor: pointer; z-index: 50; transition: all 0.3s ease; }
-        .chat-bubble-btn:hover { transform: scale(1.1); background-color: #1d4ed8; }
-        
-        /* Chat Popup Box */
-        .chat-widget-box { position: fixed; bottom: 6.5rem; right: 2rem; width: 380px; height: 500px; max-height: 80vh; max-width: calc(100vw - 2rem); background-color: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); display: none; flex-direction: column; overflow: hidden; z-index: 49; border: 1px solid #e5e7eb; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .chat-widget-box.open { display: flex; }
-        @keyframes popIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        /* Hộp Chat */
+        .chat-box {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 500px;
+            max-height: 80vh;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+            z-index: 99;
+            display: none; /* Ẩn mặc định */
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+        .chat-box.open { display: flex; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Chat Messages */
-        .chat-msg { max-width: 85%; padding: 0.6rem 0.8rem; border-radius: 0.8rem; font-size: 0.9rem; line-height: 1.4; margin-bottom: 0.5rem; word-wrap: break-word; }
-        .chat-msg-user { background-color: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; }
-        .chat-msg-ai { background-color: #f3f4f6; color: #1f2937; align-self: flex-start; border: 1px solid #e5e7eb; border-bottom-left-radius: 0.2rem; }
-        
-        .typing-dot { display: inline-block; width: 5px; height: 5px; background-color: #9ca3af; border-radius: 50%; margin: 0 1px; animation: typing 1.4s infinite ease-in-out both; }
-        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        /* Tin nhắn */
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 18px; margin-bottom: 8px; font-size: 14px; line-height: 1.5; }
+        .msg-user { background: #0084ff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg-ai { background: #f0f2f5; color: #050505; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .typing { font-style: italic; color: #888; font-size: 12px; margin-left: 10px; margin-bottom: 10px; display: none; }
 
-        /* Custom Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+        /* Scrollbar tùy chỉnh cho khung chat */
+        .chat-scroll::-webkit-scrollbar { width: 6px; }
+        .chat-scroll::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 10px; }
+
+        /* Placeholder Ảnh (Nếu chưa có ảnh thật) */
+        .img-placeholder { width: 100%; height: 300px; background: linear-gradient(45deg, #f3f4f6, #e5e7eb); display: flex; align-items: center; justify-content: center; color: #9ca3af; font-weight: bold; border-radius: 12px; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="bg-gray-50 text-gray-800">
 
-    <header class="bg-white border-b border-gray-200 z-10 shadow-sm flex-none">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold mr-3">AI</div>
-                    <h1 class="text-xl font-bold text-gray-900 tracking-tight">Tổng quan Chatbot AI 24/7</h1>
+    <section class="min-h-screen flex items-center justify-center pt-20 pb-10 px-6 bg-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-blue-100 rounded-full filter blur-3xl opacity-50 z-0"></div>
+        <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-cyan-100 rounded-full filter blur-3xl opacity-50 z-0"></div>
+        
+        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
+            <div>
+                <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
+                    Chăm Sóc Khách Hàng <br>
+                    <span class="text-gradient">Không Ngủ 24/7</span>
+                </h1>
+                <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                    Khám phá sức mạnh của AI Chatbot. Luôn sẵn sàng, phản hồi tức thì và thấu hiểu khách hàng của bạn mọi lúc, mọi nơi.
+                </p>
+                <button onclick="toggleChat()" class="bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition">
+                    Trải nghiệm ngay <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+            <div class="hidden md:block">
+                <img src="https://source.unsplash.com/random/600x600/?ai,robot,support" alt="AI Chatbot Illustration" class="rounded-2xl shadow-2xl transform hover:rotate-2 transition duration-500">
+                </div>
+        </div>
+    </section>
+
+    <section class="py-20 px-6 bg-gray-50">
+        <div class="max-w-5xl mx-auto text-center mb-16">
+            <h2 class="text-3xl font-bold mb-4">Tại sao Khách hàng rời bỏ bạn?</h2>
+            <p class="text-gray-600">Thời gian chờ đợi lâu và phản hồi thiếu chính xác là nguyên nhân hàng đầu.</p>
+        </div>
+
+        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center bg-white p-8 rounded-3xl shadow-sm">
+            <div class="order-2 md:order-1">
+                <div class="aspect-w-16 aspect-h-9 rounded-xl overflow-hidden shadow-lg relative" style="padding-bottom: 56.25%; height: 0;">
+                    <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/yGZcI6f1mRg?si=Xj-5sZd40yv7N6dF" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+            </div>
+            <div class="order-1 md:order-2">
+                <h3 class="text-2xl font-bold mb-4">Giải pháp: AI Chatbot Thế hệ mới</h3>
+                <ul class="space-y-4">
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <p><strong>Phản hồi < 1 giây:</strong> Loại bỏ hoàn toàn thời gian chờ đợi.</p>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <p><strong>Xử lý đa nhiệm:</strong> Hỗ trợ hàng ngàn khách hàng cùng lúc.</p>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <p><strong>Học hỏi liên tục:</strong> Càng tương tác, càng thông minh nhờ Gemini AI.</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 px-6 bg-white">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-12">Lợi ích Doanh nghiệp</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-blue-50 p-8 rounded-2xl border border-blue-100 text-center hover:shadow-md transition">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Tiết kiệm Chi phí</h3>
+                    <p class="text-gray-600">Giảm đến 70% chi phí vận hành đội ngũ CSKH cơ bản.</p>
+                </div>
+                <div class="bg-cyan-50 p-8 rounded-2xl border border-cyan-100 text-center hover:shadow-md transition">
+                    <div class="w-16 h-16 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Tăng Doanh thu</h3>
+                    <p class="text-gray-600">Tự động tư vấn và chốt đơn ngay cả khi bạn đang ngủ.</p>
+                </div>
+                <div class="bg-purple-50 p-8 rounded-2xl border border-purple-100 text-center hover:shadow-md transition">
+                    <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Nâng cao Trải nghiệm</h3>
+                    <p class="text-gray-600">Khách hàng luôn được lắng nghe và hỗ trợ 24/7.</p>
                 </div>
             </div>
         </div>
-    </header>
+    </section>
 
-    <nav class="bg-white border-b border-gray-200 flex-none overflow-x-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex space-x-1 py-3 min-w-max">
-                <button onclick="switchTab('overview')" id="tab-overview" class="nav-item active">Tổng quan</button>
-                <button onclick="switchTab('benefits')" id="tab-benefits" class="nav-item">Lợi ích</button>
-                <button onclick="switchTab('how')" id="tab-how" class="nav-item">Cách hoạt động</button>
-                <button onclick="switchTab('apps')" id="tab-apps" class="nav-item">Ứng dụng</button>
-            </div>
-        </div>
-    </nav>
+    <footer class="bg-gray-900 text-gray-400 py-8 text-center">
+        <p>© 2023 AI Chatbot Solutions. Powered by Gemini & Render.</p>
+    </footer>
 
-    <main class="flex-grow overflow-y-auto bg-gray-50 custom-scroll relative">
-        <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24"> 
 
-            <div id="content-overview" class="section-content active">
-                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Chatbot AI: Tương lai của CSKH</h2>
-                    <p class="text-lg text-gray-600 leading-relaxed mb-6">Chatbot AI sử dụng Trí tuệ nhân tạo (AI) để mô phỏng cuộc trò chuyện.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                        <div class="p-6 bg-blue-50 rounded-xl border border-blue-100">
-                            <div class="text-blue-600 font-bold text-xl mb-2">24/7/365</div>
-                            <p class="text-gray-600 text-sm">Hoạt động không ngừng nghỉ.</p>
-                        </div>
-                        <div class="p-6 bg-green-50 rounded-xl border border-green-100">
-                            <div class="text-green-600 font-bold text-xl mb-2">Tức thì</div>
-                            <p class="text-gray-600 text-sm">Phản hồi ngay lập tức.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="messenger-bubble" onclick="toggleChat()">
+        <i class="fab fa-facebook-messenger messenger-icon"></i>
+    </div>
 
-            <div id="content-benefits" class="section-content">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Biểu đồ Lợi ích</h3>
-                        <div class="h-64 flex justify-center"><canvas id="benefitsChart"></canvas></div>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="bg-white rounded-xl p-5 border border-gray-200 shadow-sm"><h4 class="font-semibold text-blue-700">Tiết kiệm Chi phí</h4></div>
-                        <div class="bg-white rounded-xl p-5 border border-gray-200 shadow-sm"><h4 class="font-semibold text-green-700">Tăng Doanh thu</h4></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="content-how" class="section-content">
-                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Cách hoạt động</h3>
-                    <p>Hệ thống kết nối trực tiếp với Server Node.js của bạn qua Localtunnel để lấy câu trả lời từ Gemini.</p>
-                </div>
-            </div>
-
-            <div id="content-apps" class="section-content">
-                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Ứng dụng thực tế</h3>
-                    <p>Hỗ trợ khách hàng, Tư vấn bán hàng, Tra cứu thông tin...</p>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <div id="chat-widget" class="chat-widget-box">
-        <div class="bg-gray-900 text-white px-4 py-3 flex justify-between items-center flex-none cursor-pointer" onclick="toggleChat()">
+    <div class="chat-box" id="chat-box">
+        <div class="bg-gradient-to-r from-blue-600 to-cyan-500 p-4 flex justify-between items-center text-white">
             <div class="flex items-center">
-                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                <h3 class="font-bold text-sm">Hỗ trợ trực tuyến</h3>
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold">Trợ lý AI 24/7</h3>
+                    <p class="text-xs text-blue-100 flex items-center"><span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span> Đang hoạt động</p>
+                </div>
             </div>
-            <button class="text-gray-400 hover:text-white">✕</button>
+            <button onclick="toggleChat()" class="text-white/80 hover:text-white text-xl">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
 
-        <div id="chat-status" class="bg-gray-100 text-xs text-center py-1 text-gray-500 border-b border-gray-200">
-            Đang kết nối...
+        <div class="flex-1 p-4 overflow-y-auto chat-scroll bg-gray-50 flex flex-col" id="chat-messages">
+            <div class="msg msg-ai">
+                👋 Xin chào! Tôi là trợ lý ảo AI.<br>Bạn cần hỗ trợ gì về dịch vụ CSKH 24/7 hôm nay?
+            </div>
+        </div>
+        
+        <div class="typing" id="typing-indicator">
+            <i class="fas fa-ellipsis-h"></i> AI đang soạn tin...
         </div>
 
-        <div id="chat-window" class="flex-grow p-4 overflow-y-auto custom-scroll bg-white flex flex-col">
-            <div class="chat-msg chat-msg-ai">👋 Xin chào! Tôi là trợ lý ảo AI.<br>Tôi có thể giúp gì cho bạn?</div>
-        </div>
-
-        <div class="p-3 bg-gray-50 border-t border-gray-200 flex-none">
+        <div class="p-3 border-t border-gray-200 bg-white">
             <form id="chat-form" class="flex gap-2">
-                <input type="text" id="chat-input" class="flex-grow px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm" placeholder="Nhập tin nhắn..." autocomplete="off" disabled>
-                <button type="submit" id="chat-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center justify-center" disabled>Gửi</button>
+                <input type="text" id="chat-input" class="flex-grow bg-gray-100 rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tin nhắn..." autocomplete="off" disabled>
+                <button type="submit" id="send-btn" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </form>
         </div>
     </div>
 
-    <button onclick="toggleChat()" class="chat-bubble-btn" title="Chat với chúng tôi">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-    </button>
 
     <script>
-        // 1. Logic Chuyển Tab & Giao diện (Đã khôi phục)
-        function switchTab(tabId) {
-            document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`content-${tabId}`).classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-            
-            if (tabId === 'benefits' && !window.chartInitialized) initChart();
-        }
-
+        // 1. Hàm bật/tắt Chatbox
         function toggleChat() {
-            const chatBox = document.getElementById('chat-widget');
+            const chatBox = document.getElementById('chat-box');
             chatBox.classList.toggle('open');
+            // Focus vào ô nhập khi mở
+            if (chatBox.classList.contains('open')) {
+                setTimeout(() => document.getElementById('chat-input').focus(), 300);
+            }
         }
 
-        function initChart() {
-            const ctx = document.getElementById('benefitsChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Trải nghiệm', 'Kinh doanh'],
-                    datasets: [{ data: [55, 45], backgroundColor: ['#3b82f6', '#10b981'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-            window.chartInitialized = true;
-        }
-
-        // 2. Logic Kết nối AI (Đã sửa link của bạn)
+        // 2. CẤU HÌNH FIREBASE (Dùng lại config cũ của bạn)
         const firebaseConfig = {
             apiKey: "AIzaSyBMUvMykvoYX43Xl2LtZKKwN9IsBLN41Qs",
             authDomain: "aict-3d755.firebaseapp.com",
@@ -196,111 +232,115 @@
             measurementId: "G-3T9PB6P6SC"
         };
 
+        // 3. KHỞI TẠO & XỬ LÝ CHAT
         try {
-            // Khởi tạo Firebase
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
             const auth = firebase.auth();
+            // Sử dụng collection chung để demo
             const messagesRef = db.collection('chats').doc('global_room').collection('messages');
 
-            const statusEl = document.getElementById('chat-status');
             const inputEl = document.getElementById('chat-input');
-            const btnEl = document.getElementById('chat-send-btn');
-            const chatWindow = document.getElementById('chat-window');
+            const btnEl = document.getElementById('send-btn');
+            const msgArea = document.getElementById('chat-messages');
+            const typingIndicator = document.getElementById('typing-indicator');
 
-            // Đăng nhập
-            auth.signInAnonymously().catch(console.error);
+            // Đăng nhập ẩn danh để dùng Firebase
+            auth.signInAnonymously().catch(err => console.error("Lỗi Auth:", err));
+
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    statusEl.textContent = "Đã kết nối Server";
-                    statusEl.className = "bg-green-100 text-xs text-center py-1 text-green-700 border-b border-green-200";
+                    // Mở khóa ô nhập khi đã kết nối
                     inputEl.disabled = false;
                     btnEl.disabled = false;
-                    setupChatListeners();
-                } else {
-                    statusEl.textContent = "Mất kết nối";
-                    inputEl.disabled = true;
-                    btnEl.disabled = true;
+                    inputEl.placeholder = "Nhập tin nhắn...";
+                    setupRealtimeChat();
                 }
             });
 
-            // Lắng nghe tin nhắn
-            function setupChatListeners() {
+            // Lắng nghe tin nhắn mới từ Firebase
+            function setupRealtimeChat() {
                 messagesRef.orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-                    chatWindow.innerHTML = `<div class="chat-msg chat-msg-ai">👋 Xin chào! Tôi là trợ lý ảo AI.<br>Tôi có thể giúp gì cho bạn?</div>`;
+                    // Xóa tin cũ để render lại (đơn giản hóa)
+                    msgArea.innerHTML = `<div class="msg msg-ai">👋 Xin chào! Tôi là trợ lý ảo AI.<br>Bạn cần hỗ trợ gì về dịch vụ CSKH 24/7 hôm nay?</div>`;
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        renderMessage(data.text, data.sender);
+                        appendMessage(data.text, data.sender);
                     });
-                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                    scrollToBottom();
                 });
             }
 
-            // GỬI TIN NHẮN VÀ GỌI GEMINI
+            // Xử lý sự kiện Gửi tin nhắn
             document.getElementById('chat-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const text = inputEl.value.trim();
                 if (!text) return;
 
-                inputEl.value = '';
-                
-                // 1. Lưu tin User
-                await messagesRef.add({ text: text, sender: 'user', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                inputEl.value = ''; // Xóa ô nhập
+                inputEl.focus();
 
-                // 2. Hiện hiệu ứng gõ
-                const typingId = showTyping();
+                // 1. Lưu tin nhắn của User lên Firebase
+                await messagesRef.add({
+                    text: text,
+                    sender: 'user',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-                // 3. GỌI SERVER (LINK CỦA BẠN ĐÂY)
-                const aiReply = await callGeminiAPI(text);
+                // 2. Hiện hiệu ứng "Đang nhập..."
+                typingIndicator.style.display = 'block';
+                scrollToBottom();
 
-                // 4. Lưu tin AI
-                removeTyping(typingId);
-                await messagesRef.add({ text: aiReply, sender: 'ai', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                // 3. GỌI API TRÊN RENDER (LINK CỦA BẠN)
+                try {
+                    const response = await fetch('https://my-gemini-api.onrender.com/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: text })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // 4. Ẩn hiệu ứng "Đang nhập..."
+                    typingIndicator.style.display = 'none';
+
+                    // 5. Lưu câu trả lời của AI lên Firebase
+                    if (data.reply) {
+                         await messagesRef.add({
+                            text: data.reply,
+                            sender: 'ai',
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+
+                } catch (error) {
+                    console.error("Lỗi gọi API Render:", error);
+                    typingIndicator.style.display = 'none';
+                    // Báo lỗi nhẹ nhàng cho người dùng
+                    appendMessage("⚠️ Xin lỗi, server đang bận. Vui lòng thử lại sau giây lát.", "ai");
+                }
             });
 
         } catch (error) {
-            console.error("Lỗi:", error);
+            console.error("Lỗi khởi tạo Firebase:", error);
+            alert("Có lỗi xảy ra khi kết nối dịch vụ Chat.");
         }
 
-        // Hàm gọi API (Có bypass tunnel)
-        async function callGeminiAPI(message) {
-            try {
-                const response = await fetch('https://witty-papers-call.loca.lt/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
-                    body: JSON.stringify({ message: message })
-                });
-                const data = await response.json();
-                return data.reply;
-            } catch (error) {
-                console.error("Lỗi:", error);
-                return "Lỗi kết nối! (Kiểm tra xem cửa sổ đen localtunnel còn chạy không?)";
-            }
-        }
-
-        // Các hàm phụ trợ
-        function renderMessage(text, sender) {
+        // Hàm phụ trợ: Hiển thị tin nhắn
+        function appendMessage(text, sender) {
             const div = document.createElement('div');
-            div.className = sender === 'user' ? 'chat-msg chat-msg-user' : 'chat-msg chat-msg-ai';
+            div.className = sender === 'user' ? 'msg msg-user' : 'msg msg-ai';
+            // Chuyển ký tự xuống dòng (\n) thành thẻ <br> để hiển thị đúng
             div.innerHTML = text ? text.replace(/\n/g, '<br>') : '...';
-            document.getElementById('chat-window').appendChild(div);
+            msgArea.appendChild(div);
+            scrollToBottom();
         }
 
-        function showTyping() {
-            const div = document.createElement('div');
-            const id = 'typing-' + Date.now();
-            div.id = id;
-            div.className = 'chat-msg chat-msg-ai';
-            div.innerHTML = `<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>`;
-            document.getElementById('chat-window').appendChild(div);
-            document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;
-            return id;
+        // Hàm phụ trợ: Cuộn xuống cuối khung chat
+        function scrollToBottom() {
+             msgArea.scrollTop = msgArea.scrollHeight;
         }
 
-        function removeTyping(id) {
-            const el = document.getElementById(id);
-            if (el) el.remove();
-        }
     </script>
 </body>
 </html>
