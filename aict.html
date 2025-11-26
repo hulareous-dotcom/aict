@@ -3,104 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot AI - Hỗ trợ Lý thuyết</title>
+    <title>Chatbot AI 24/7 & Hỗ trợ</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
-        body { font-family: sans-serif; background-color: #f3f4f6; }
-        .nav-item { cursor: pointer; padding: 10px 15px; border-radius: 8px; font-weight: 500; color: #555; }
-        .nav-item.active { background-color: #2563eb; color: white; }
-        .section-content { display: none; padding: 20px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
+        /* Navigation Tabs */
+        .nav-item { cursor: pointer; padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 500; color: #4b5563; transition: all 0.2s; white-space: nowrap; }
+        .nav-item:hover { background-color: #e5e7eb; color: #1f2937; }
+        .nav-item.active { background-color: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+
+        /* Content Sections */
+        .section-content { display: none; animation: slideUp 0.4s ease-out; }
         .section-content.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Floating Button */
+        .chat-bubble-btn { position: fixed; bottom: 2rem; right: 2rem; width: 3.5rem; height: 3.5rem; background-color: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); cursor: pointer; z-index: 50; transition: all 0.3s ease; }
+        .chat-bubble-btn:hover { transform: scale(1.1); background-color: #1d4ed8; }
         
-        /* Widget Chat */
-        .chat-btn { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 100; transition: transform 0.2s; }
-        .chat-btn:hover { transform: scale(1.1); }
+        /* Chat Popup Box */
+        .chat-widget-box { position: fixed; bottom: 6.5rem; right: 2rem; width: 380px; height: 500px; max-height: 80vh; max-width: calc(100vw - 2rem); background-color: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); display: none; flex-direction: column; overflow: hidden; z-index: 49; border: 1px solid #e5e7eb; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .chat-widget-box.open { display: flex; }
+        @keyframes popIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        /* Chat Messages */
+        .chat-msg { max-width: 85%; padding: 0.6rem 0.8rem; border-radius: 0.8rem; font-size: 0.9rem; line-height: 1.4; margin-bottom: 0.5rem; word-wrap: break-word; }
+        .chat-msg-user { background-color: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; }
+        .chat-msg-ai { background-color: #f3f4f6; color: #1f2937; align-self: flex-start; border: 1px solid #e5e7eb; border-bottom-left-radius: 0.2rem; }
         
-        .chat-box { position: fixed; bottom: 90px; right: 20px; width: 350px; height: 500px; background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 99; border: 1px solid #ddd; }
-        .chat-box.open { display: flex; }
-        
-        .chat-header { background: #1f2937; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .chat-body { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f9fafb; }
-        .chat-footer { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 5px; background: white; }
-        
-        .msg { max-width: 80%; padding: 10px; border-radius: 10px; font-size: 14px; line-height: 1.4; }
-        .msg-ai { background: #e5e7eb; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .msg-user { background: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        
-        .status-bar { font-size: 11px; text-align: center; padding: 2px; background: #eee; color: #666; }
-        .status-bar.connected { background: #d1fae5; color: #065f46; }
-        .typing { font-style: italic; color: #888; font-size: 12px; margin-left: 10px; display: none; }
+        .typing-dot { display: inline-block; width: 5px; height: 5px; background-color: #9ca3af; border-radius: 50%; margin: 0 1px; animation: typing 1.4s infinite ease-in-out both; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
     </style>
 </head>
-<body class="h-screen flex flex-col">
+<body class="h-screen flex flex-col overflow-hidden">
 
-    <div class="bg-white p-4 shadow-sm flex items-center justify-between">
-        <h1 class="text-xl font-bold text-gray-800">Trang Web Tích Hợp Gemini AI</h1>
-    </div>
-
-    <div class="bg-white border-b px-4 py-2 flex gap-2">
-        <div onclick="showTab('home')" id="btn-home" class="nav-item active">Trang chủ</div>
-        <div onclick="showTab('info')" id="btn-info" class="nav-item">Giới thiệu</div>
-    </div>
-
-    <div class="flex-grow relative overflow-auto">
-        <div id="tab-home" class="section-content active">
-            <h2 class="text-2xl font-bold mb-4">Chào mừng bạn!</h2>
-            <p class="mb-4">Hãy nhấn vào nút Chat màu xanh ở góc dưới bên phải để hỏi lý thuyết.</p>
-            <div class="bg-white p-6 rounded-lg shadow border">
-                <h3 class="font-bold mb-2">Cách hoạt động:</h3>
-                <ul class="list-disc pl-5 space-y-2">
-                    <li>Bạn nhập câu hỏi vào khung chat.</li>
-                    <li>Website gửi câu hỏi đến Server của bạn qua Internet.</li>
-                    <li>Server hỏi Gemini và trả về kết quả.</li>
-                </ul>
+    <header class="bg-white border-b border-gray-200 z-10 shadow-sm flex-none">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold mr-3">AI</div>
+                    <h1 class="text-xl font-bold text-gray-900 tracking-tight">Tổng quan Chatbot AI 24/7</h1>
+                </div>
             </div>
         </div>
-        <div id="tab-info" class="section-content">
-            <h2 class="text-2xl font-bold">Thông tin</h2>
-            <p>Dự án demo tích hợp AI qua Localtunnel.</p>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 flex-none overflow-x-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-1 py-3 min-w-max">
+                <button onclick="switchTab('overview')" id="tab-overview" class="nav-item active">Tổng quan</button>
+                <button onclick="switchTab('benefits')" id="tab-benefits" class="nav-item">Lợi ích</button>
+                <button onclick="switchTab('how')" id="tab-how" class="nav-item">Cách hoạt động</button>
+                <button onclick="switchTab('apps')" id="tab-apps" class="nav-item">Ứng dụng</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow overflow-y-auto bg-gray-50 custom-scroll relative">
+        <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24"> 
+
+            <div id="content-overview" class="section-content active">
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Chatbot AI: Tương lai của CSKH</h2>
+                    <p class="text-lg text-gray-600 leading-relaxed mb-6">Chatbot AI sử dụng Trí tuệ nhân tạo (AI) để mô phỏng cuộc trò chuyện.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                        <div class="p-6 bg-blue-50 rounded-xl border border-blue-100">
+                            <div class="text-blue-600 font-bold text-xl mb-2">24/7/365</div>
+                            <p class="text-gray-600 text-sm">Hoạt động không ngừng nghỉ.</p>
+                        </div>
+                        <div class="p-6 bg-green-50 rounded-xl border border-green-100">
+                            <div class="text-green-600 font-bold text-xl mb-2">Tức thì</div>
+                            <p class="text-gray-600 text-sm">Phản hồi ngay lập tức.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-benefits" class="section-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Biểu đồ Lợi ích</h3>
+                        <div class="h-64 flex justify-center"><canvas id="benefitsChart"></canvas></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-xl p-5 border border-gray-200 shadow-sm"><h4 class="font-semibold text-blue-700">Tiết kiệm Chi phí</h4></div>
+                        <div class="bg-white rounded-xl p-5 border border-gray-200 shadow-sm"><h4 class="font-semibold text-green-700">Tăng Doanh thu</h4></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="content-how" class="section-content">
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Cách hoạt động</h3>
+                    <p>Hệ thống kết nối trực tiếp với Server Node.js của bạn qua Localtunnel để lấy câu trả lời từ Gemini.</p>
+                </div>
+            </div>
+
+            <div id="content-apps" class="section-content">
+                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Ứng dụng thực tế</h3>
+                    <p>Hỗ trợ khách hàng, Tư vấn bán hàng, Tra cứu thông tin...</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="chat-widget" class="chat-widget-box">
+        <div class="bg-gray-900 text-white px-4 py-3 flex justify-between items-center flex-none cursor-pointer" onclick="toggleChat()">
+            <div class="flex items-center">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                <h3 class="font-bold text-sm">Hỗ trợ trực tuyến</h3>
+            </div>
+            <button class="text-gray-400 hover:text-white">✕</button>
+        </div>
+
+        <div id="chat-status" class="bg-gray-100 text-xs text-center py-1 text-gray-500 border-b border-gray-200">
+            Đang kết nối...
+        </div>
+
+        <div id="chat-window" class="flex-grow p-4 overflow-y-auto custom-scroll bg-white flex flex-col">
+            <div class="chat-msg chat-msg-ai">👋 Xin chào! Tôi là trợ lý ảo AI.<br>Tôi có thể giúp gì cho bạn?</div>
+        </div>
+
+        <div class="p-3 bg-gray-50 border-t border-gray-200 flex-none">
+            <form id="chat-form" class="flex gap-2">
+                <input type="text" id="chat-input" class="flex-grow px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm" placeholder="Nhập tin nhắn..." autocomplete="off" disabled>
+                <button type="submit" id="chat-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center justify-center" disabled>Gửi</button>
+            </form>
         </div>
     </div>
 
-    <div class="chat-btn" onclick="toggleChat()">💬</div>
-
-    <div class="chat-box" id="chat-box">
-        <div class="chat-header">
-            <div class="font-bold">Trợ lý ảo AI</div>
-            <div onclick="toggleChat()" style="cursor:pointer">✕</div>
-        </div>
-        <div id="connection-status" class="status-bar">Đang kết nối...</div>
-        
-        <div class="chat-body" id="chat-messages">
-            <div class="msg msg-ai">Xin chào! Tôi có thể giúp gì cho bạn?</div>
-        </div>
-        <div class="typing" id="typing-indicator">Gemini đang suy nghĩ...</div>
-        
-        <form class="chat-footer" id="chat-form">
-            <input type="text" id="chat-input" class="flex-grow border rounded px-3 py-2 text-sm outline-none" placeholder="Nhập câu hỏi..." disabled>
-            <button type="submit" id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold disabled:opacity-50" disabled>Gửi</button>
-        </form>
-    </div>
+    <button onclick="toggleChat()" class="chat-bubble-btn" title="Chat với chúng tôi">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+    </button>
 
     <script>
-        // 1. Cấu hình giao diện cơ bản
-        function showTab(name) {
-            document.querySelectorAll('.section-content').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-            document.getElementById('tab-' + name).classList.add('active');
-            document.getElementById('btn-' + name).classList.add('active');
+        // 1. Logic Chuyển Tab & Giao diện (Đã khôi phục)
+        function switchTab(tabId) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`content-${tabId}`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            
+            if (tabId === 'benefits' && !window.chartInitialized) initChart();
         }
 
         function toggleChat() {
-            document.getElementById('chat-box').classList.toggle('open');
+            const chatBox = document.getElementById('chat-widget');
+            chatBox.classList.toggle('open');
         }
 
-        // 2. Cấu hình Firebase & AI
+        function initChart() {
+            const ctx = document.getElementById('benefitsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Trải nghiệm', 'Kinh doanh'],
+                    datasets: [{ data: [55, 45], backgroundColor: ['#3b82f6', '#10b981'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+            window.chartInitialized = true;
+        }
+
+        // 2. Logic Kết nối AI (Đã sửa link của bạn)
         const firebaseConfig = {
             apiKey: "AIzaSyBMUvMykvoYX43Xl2LtZKKwN9IsBLN41Qs",
             authDomain: "aict-3d755.firebaseapp.com",
@@ -111,111 +196,111 @@
             measurementId: "G-3T9PB6P6SC"
         };
 
-        // Khởi tạo Firebase
         try {
+            // Khởi tạo Firebase
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
             const auth = firebase.auth();
             const messagesRef = db.collection('chats').doc('global_room').collection('messages');
 
-            const statusEl = document.getElementById('connection-status');
+            const statusEl = document.getElementById('chat-status');
             const inputEl = document.getElementById('chat-input');
-            const btnEl = document.getElementById('send-btn');
-            const msgArea = document.getElementById('chat-messages');
+            const btnEl = document.getElementById('chat-send-btn');
+            const chatWindow = document.getElementById('chat-window');
 
-            // Đăng nhập ẩn danh
-            auth.signInAnonymously().catch(err => console.error(err));
-
+            // Đăng nhập
+            auth.signInAnonymously().catch(console.error);
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    statusEl.innerText = "Đã kết nối Server";
-                    statusEl.classList.add('connected');
+                    statusEl.textContent = "Đã kết nối Server";
+                    statusEl.className = "bg-green-100 text-xs text-center py-1 text-green-700 border-b border-green-200";
                     inputEl.disabled = false;
                     btnEl.disabled = false;
-                    setupRealtimeChat();
+                    setupChatListeners();
                 } else {
-                    statusEl.innerText = "Mất kết nối";
+                    statusEl.textContent = "Mất kết nối";
                     inputEl.disabled = true;
                     btnEl.disabled = true;
                 }
             });
 
             // Lắng nghe tin nhắn
-            function setupRealtimeChat() {
+            function setupChatListeners() {
                 messagesRef.orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-                    msgArea.innerHTML = `<div class="msg msg-ai">Xin chào! Tôi có thể giúp gì cho bạn?</div>`;
+                    chatWindow.innerHTML = `<div class="chat-msg chat-msg-ai">👋 Xin chào! Tôi là trợ lý ảo AI.<br>Tôi có thể giúp gì cho bạn?</div>`;
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        appendMessage(data.text, data.sender);
+                        renderMessage(data.text, data.sender);
                     });
-                    msgArea.scrollTop = msgArea.scrollHeight;
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
                 });
             }
 
-            // Gửi tin nhắn & Gọi AI
+            // GỬI TIN NHẮN VÀ GỌI GEMINI
             document.getElementById('chat-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const text = inputEl.value.trim();
                 if (!text) return;
 
                 inputEl.value = '';
+                
+                // 1. Lưu tin User
+                await messagesRef.add({ text: text, sender: 'user', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
 
-                // 1. Lưu tin của user lên Firebase
-                await messagesRef.add({
-                    text: text,
-                    sender: 'user',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                // 2. Hiện hiệu ứng gõ
+                const typingId = showTyping();
 
-                // 2. Hiện trạng thái đang gõ
-                document.getElementById('typing-indicator').style.display = 'block';
+                // 3. GỌI SERVER (LINK CỦA BẠN ĐÂY)
+                const aiReply = await callGeminiAPI(text);
 
-                // 3. Gọi Node.js Server qua LOCAL TUNNEL
-                const aiResponse = await callGeminiAPI(text);
-
-                // 4. Lưu tin của AI lên Firebase
-                document.getElementById('typing-indicator').style.display = 'none';
-                await messagesRef.add({
-                    text: aiResponse,
-                    sender: 'ai',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                // 4. Lưu tin AI
+                removeTyping(typingId);
+                await messagesRef.add({ text: aiReply, sender: 'ai', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
             });
 
         } catch (error) {
-            console.error("Lỗi khởi tạo:", error);
-            alert("Có lỗi xảy ra: " + error.message);
+            console.error("Lỗi:", error);
         }
 
-        // --- HÀM GỌI API ĐÃ CẬP NHẬT LINK ---
+        // Hàm gọi API (Có bypass tunnel)
         async function callGeminiAPI(message) {
             try {
-                // ĐÃ THAY LINK CỦA BẠN VÀO ĐÂY
                 const response = await fetch('https://witty-papers-call.loca.lt/api/chat', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Bypass-Tunnel-Reminder': 'true' // Thêm cái này để tránh lỗi chặn của localtunnel
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
                     body: JSON.stringify({ message: message })
                 });
-                
                 const data = await response.json();
                 return data.reply;
             } catch (error) {
-                console.error("Lỗi gọi Server:", error);
-                return "Lỗi kết nối! (Hãy kiểm tra xem cửa sổ đen localtunnel còn chạy không?)";
+                console.error("Lỗi:", error);
+                return "Lỗi kết nối! (Kiểm tra xem cửa sổ đen localtunnel còn chạy không?)";
             }
         }
 
-        // Hàm hiển thị tin nhắn
-        function appendMessage(text, sender) {
+        // Các hàm phụ trợ
+        function renderMessage(text, sender) {
             const div = document.createElement('div');
-            div.className = sender === 'user' ? 'msg msg-user' : 'msg msg-ai';
+            div.className = sender === 'user' ? 'chat-msg chat-msg-user' : 'chat-msg chat-msg-ai';
             div.innerHTML = text ? text.replace(/\n/g, '<br>') : '...';
-            document.getElementById('chat-messages').appendChild(div);
+            document.getElementById('chat-window').appendChild(div);
         }
 
+        function showTyping() {
+            const div = document.createElement('div');
+            const id = 'typing-' + Date.now();
+            div.id = id;
+            div.className = 'chat-msg chat-msg-ai';
+            div.innerHTML = `<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>`;
+            document.getElementById('chat-window').appendChild(div);
+            document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;
+            return id;
+        }
+
+        function removeTyping(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
     </script>
 </body>
 </html>
