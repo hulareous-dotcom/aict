@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot AI 24/7 & Hỗ trợ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .nav-item { cursor: pointer; padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 500; color: #4b5563; transition: all 0.2s; white-space: nowrap; }
+        .nav-item:hover { background-color: #e5e7eb; color: #1f2937; }
+        .nav-item.active { background-color: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        .section-content { display: none; animation: slideUp 0.4s ease-out; }
+        .section-content.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* CHAT WIDGET STYLES */
+        .chat-bubble-btn { position: fixed; bottom: 2rem; right: 2rem; width: 3.5rem; height: 3.5rem; background-color: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); cursor: pointer; z-index: 50; transition: all 0.3s ease; }
+        .chat-bubble-btn:hover { transform: scale(1.1); background-color: #1d4ed8; }
+        .chat-widget-box { position: fixed; bottom: 6.5rem; right: 2rem; width: 380px; height: 500px; max-height: 80vh; max-width: calc(100vw - 2rem); background-color: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); display: none; flex-direction: column; overflow: hidden; z-index: 49; border: 1px solid #e5e7eb; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .chat-widget-box.open { display: flex; }
+        @keyframes popIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .chat-msg { max-width: 85%; padding: 0.6rem 0.8rem; border-radius: 0.8rem; font-size: 0.9rem; line-height: 1.4; margin-bottom: 0.5rem; word-wrap: break-word; }
+        .chat-msg-user { background-color: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; }
+        .chat-msg-ai { background-color: #f3f4f6; color: #1f2937; align-self: flex-start; border: 1px solid #e5e7eb; border-bottom-left-radius: 0.2rem; }
+        .typing-dot { display: inline-block; width: 5px; height: 5px; background-color: #9ca3af; border-radius: 50%; margin: 0 1px; animation: typing 1.4s infinite ease-in-out both; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-white border-b border-gray-200 z-10 shadow-sm flex-none">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold mr-3">AI</div>
+                    <h1 class="text-xl font-bold text-gray-900 tracking-tight">Tổng quan Chatbot AI</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 flex-none overflow-x-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-1 py-3 min-w-max">
+                <button onclick="switchTab('overview')" id="tab-overview" class="nav-item active">Tổng quan</button>
+                <button onclick="switchTab('benefits')" id="tab-benefits" class="nav-item">Lợi ích</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow overflow-y-auto bg-gray-50 custom-scroll relative">
+        <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24"> 
+            <div id="content-overview" class="section-content active">
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Chatbot AI: Tương lai của CSKH</h2>
+                    <p class="text-lg text-gray-600 leading-relaxed">Hệ thống Chatbot tích hợp Gemini AI giúp trả lời mọi câu hỏi lý thuyết và hỗ trợ khách hàng tự động.</p>
+                </div>
+            </div>
+            <div id="content-benefits" class="section-content">
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Lợi ích</h2>
+                    <p>Giúp tiết kiệm thời gian và chi phí.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="chat-widget" class="chat-widget-box">
+        <div class="bg-gray-900 text-white px-4 py-3 flex justify-between items-center flex-none cursor-pointer" onclick="toggleChat()">
+            <div class="flex items-center">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                <h3 class="font-bold text-sm">Hỗ trợ trực tuyến</h3>
+            </div>
+            <button class="text-gray-400 hover:text-white">✕</button>
+        </div>
+
+        <div id="chat-status" class="bg-gray-100 text-xs text-center py-1 text-gray-500 border-b border-gray-200">Đang chờ kết nối...</div>
+
+        <div id="chat-window" class="flex-grow p-4 overflow-y-auto custom-scroll bg-white flex flex-col">
+            <div class="chat-msg chat-msg-ai">👋 Xin chào! Tôi là trợ lý ảo AI.<br>Tôi có thể giúp gì cho bạn?</div>
+        </div>
+
+        <div class="p-3 bg-gray-50 border-t border-gray-200 flex-none">
+            <form id="chat-form" class="flex gap-2">
+                <input type="text" id="chat-input" class="flex-grow px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm" placeholder="Nhập tin nhắn..." autocomplete="off" disabled>
+                <button type="submit" id="chat-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold disabled:opacity-50" disabled>Gửi</button>
+            </form>
+        </div>
+    </div>
+
+    <button onclick="toggleChat()" class="chat-bubble-btn">💬</button>
